@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl"
+      crossorigin="anonymous"
+    />
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="./socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <div class="container container-fluid mb-3">
+      <h1 class="display-4 pb-2">Send Message</h1>
+      <div class="container container-fluid">
+        <div class="row">
+          <div class="col">
+            <label for="name" class="form-label">Name</label>
+            <input
+              type="text"
+              class="form-control mb-2"
+              id="name"
+              placeholder="Name"
+            />
+          </div>
+          <div class="col">
+            <label for="message" class="form-label">Message</label>
+            <textarea
+              type="text"
+              class="form-control mb-2"
+              id="message"
+              placeholder="Type message..."
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-success" id="send">Send</button>
+    </div>
+    <div class="container container-fluid messages" id="msg-container"></div>
+  </body>
+
+  <script>
+    const socket = io();
+
+    // create a new HTML element and add a textChild node
+    function createElementWithText(HTMLTagName, data) {
+      const element = document.createElement(HTMLTagName);
+      element.textContent = data;
+      return element;
+    }
+
+    // extract text value from a input field
+    function extractText(id){
+        const inputElement = find(id);
+        return inputElement.value.trim();
+    }
+
+    // find a element by id
+    function find(id) {
+      return document.getElementById(id);
+    }
+
+    function addMessages(msg) {
+      const msgContainer = find("msg-container");
+
+      const h4 = createElementWithText("h4", msg.name);
+      const p = createElementWithText("p", msg.data);
+
+      msgContainer.appendChild(h4);
+      msgContainer.appendChild(p);
+    }
+
+    function getMessages() {
+      axios
+        .get("http://localhost:3000/messages")
+        .then((res) => res.data)
+        .then((msgs) => {
+          msgs.forEach(addMessages);
+        });
+    }
+
+    function postMessages(msg) {
+      axios.post("http://localhost:3000/messages", msg);
+    }
+
+    
+    if (window.onload) {
+      console.log("loading...");
+    } else {
+      //after page loading finished
+
+      const btn = find("send");
+      btn.addEventListener("click", () => {
+        
+        // extract text from respective input field
+        const name = extractText("name");
+        const data = extractText("message");
+
+        // if only 'both name and data' not empty post the message
+        if (name && data) {
+          const msg = {
+            name,
+            data,
+          };
+          postMessages(msg);
+        } else {
+            console.log("Enter valid data.");
+        }
+      });
+
+      getMessages();
+    }
+
+    socket.on('message', msg => {
+      addMessages(msg);
+    });
+    
+  </script>
+</html>
